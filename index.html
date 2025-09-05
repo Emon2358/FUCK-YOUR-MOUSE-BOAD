@@ -3,322 +3,294 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FUCK YOUR MOUSE BOAD</title>
+    <title>ファミコン NSF ウェブプレーヤー</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         :root {
-            --bg-color: #1e1e1e; --primary-color: #3a3a3a; --secondary-color: #2a2a2a;
-            --accent-color: #4a90e2; --text-color: #f0f0f0; --border-radius: 8px;
+            --bg-color: #2A3442;
+            --panel-bg: #1E2632;
+            --display-bg: #92A398;
+            --text-color: #333;
+            --accent-color: #DE4B4B;
+            --border-color: #111;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px;
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--bg-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
-        h1 { text-align: center; color: var(--accent-color); margin-top: 0; }
-        .container {
-            background-color: var(--primary-color); padding: 20px; border-radius: var(--border-radius);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); margin-bottom: 20px;
+        .player-container {
+            background-color: var(--panel-bg);
+            border: 4px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 0 var(--border-color);
         }
-        .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: center; margin-bottom: 20px; }
-        .control-item { display: flex; flex-direction: column; }
-        .control-item label { margin-bottom: 5px; font-size: 0.9em; }
-        .custom-file-upload, button {
-            padding: 10px 15px; border: none; border-radius: var(--border-radius);
-            color: white; cursor: pointer; font-size: 16px; transition: background-color 0.2s; text-align: center;
+        .display {
+            background-color: var(--display-bg);
+            color: var(--text-color);
+            padding: 15px;
+            border-radius: 4px;
+            border: 2px solid #5A6960;
+            margin-bottom: 20px;
+            font-size: 12px;
+            line-height: 1.6;
+            min-height: 120px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-        .custom-file-upload { background-color: var(--accent-color); display: inline-block; }
-        #file-input { display: none; }
-        button { background-color: #555; }
-        button:hover:not(:disabled) { background-color: #666; }
-        button:disabled { background-color: #444; cursor: not-allowed; opacity: 0.7; }
-        #play-btn { background-color: #28a745; }
-        #stop-btn { background-color: #dc3545; }
-        #download-btn { background-color: #007bff; }
-        #status-indicator { margin-left: 20px; font-style: italic; }
-        #instructions { background-color: var(--secondary-color); padding: 15px; border-radius: var(--border-radius); border-left: 5px solid var(--accent-color); }
-        #waveform, #spectrogram { border-radius: var(--border-radius); }
-        #waveform { background-color: var(--secondary-color); }
-        #spectrogram { margin-top: 10px; }
-        h2 { border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; }
-        #segments {
-            background-color: var(--secondary-color); border-radius: var(--border-radius); min-height: 200px;
-            padding: 10px; display: flex; gap: 10px; align-items: flex-start; overflow-x: auto;
+        .display-line {
+            display: block;
         }
-        .segment {
-            background-color: var(--primary-color); border: 1px solid #555;
-            padding: 12px; border-radius: var(--border-radius); cursor: grab;
-            display: flex; flex-direction: column; gap: 10px;
-            min-width: 220px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); user-select: none;
+        .controls, .track-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        .segment.dragging { opacity: 0.5; transform: scale(1.05); }
-        .segment-header { display: flex; justify-content: space-between; align-items: center; }
-        .segment-label { font-weight: bold; }
-        .delete-segment { cursor: pointer; font-size: 18px; font-weight: bold; color: #ccc; }
-        .delete-segment:hover { color: white; }
-        .segment-control { display: grid; grid-template-columns: 40px 1fr 50px; gap: 5px; align-items: center; }
-        .segment-control label, .pitch-control-label { font-size: 0.8em; }
-        .segment-control input[type="range"] { width: 100%; margin: 0; }
-        .segment-control input[type="number"] { width: 50px; background-color: #333; color: white; border: 1px solid #555; border-radius: 4px; padding: 2px; }
-        .pitch-control { display: flex; align-items: center; gap: 8px; }
-        .pitch-control small { color: #aaa; }
-        /* Toggle Switch CSS */
-        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(14px); }
-        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #555; border-radius: 5px; outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: var(--accent-color); border-radius: 50%; cursor: pointer; }
-        input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; background: var(--accent-color); border-radius: 50%; cursor: pointer; }
+        button, .file-label {
+            font-family: inherit;
+            font-size: 14px;
+            padding: 12px 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #4A586A;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--border-color);
+            position: relative;
+            top: 0;
+            transition: top 0.1s, box-shadow 0.1s;
+        }
+        button:active, .file-label:active {
+            top: 4px;
+            box-shadow: none;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            top: 0;
+            box-shadow: 0 4px 0 var(--border-color);
+        }
+        #play-pause-btn {
+            background-color: var(--accent-color);
+        }
+        #file-input {
+            display: none;
+        }
+        #status {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 15px;
+            min-height: 1em;
+        }
     </style>
 </head>
 <body>
 
-    <h1>FUCK YOUR MOUSE BOAD</h1>
-    <div class="container" id="instructions">
-        <p><strong>新機能:</strong> 各ブロックに「ピッチを維持」スイッチを追加しました。ONにすると、ダウンロード時に速度を変えても音の高さが変わりません。（プレビュー再生には適用されません）</p>
-    </div>
-
-    <div class="container">
-        <div class="controls-grid">
-            <div class="control-item"><label for="file-input" class="custom-file-upload">📁 ファイルを選択</label><input type="file" id="file-input" accept="audio/*"></div>
-            <div class="control-item"><label>再生コントロール</label><div><button id="play-btn" disabled>▶️ 再生</button><button id="stop-btn" disabled>⏹️ 停止</button></div></div>
-            <div class="control-item"><label>書き出し</label><button id="download-btn" disabled>💾 WAVダウンロード</button></div>
-            <div class="control-item"><label for="zoom-slider">ズーム</label><input type="range" id="zoom-slider" min="10" max="1000" value="10" disabled></div>
+    <div class="player-container">
+        <div id="display" class="display">
+            <span class="display-line">GAME: (NO FILE)</span>
+            <span class="display-line">ARTIST:</span>
+            <span class="display-line">COPYRIGHT:</span>
+            <span class="display-line">--------------------</span>
+            <span class="display-line">TRACK: - / -</span>
         </div>
-        <span id="status-indicator">ファイルを選択してください</span>
-        <div id="visualizers"><div id="waveform"></div><div id="spectrogram"></div></div>
-    </div>
-    
-    <div class="container sequencer-container">
-        <h2>シーケンス (ブロックをドラッグ＆ドロップで並べ替え)</h2>
-        <div id="segments"></div>
+
+        <div class="track-controls">
+            <button id="prev-track-btn" disabled>&lt;&lt;</button>
+            <span id="track-info">- / -</span>
+            <button id="next-track-btn" disabled>&gt;&gt;</button>
+        </div>
+        
+        <div class="controls">
+            <button id="play-pause-btn" disabled>PLAY</button>
+            <button id="stop-btn" disabled>STOP</button>
+            <label for="file-input" class="file-label">LOAD</label>
+            <input type="file" id="file-input" accept=".nsf,.nsfe">
+        </div>
+        
+        <div id="status">NSFファイルを選択してください</div>
     </div>
 
-    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
-    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
-    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/spectrogram.min.js"></script>
-    <script src="https://unpkg.com/soundtouchjs/soundtouch.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/gh/goto-bus-stop/gme-js/gme.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const fileInput = document.getElementById('file-input'), playBtn = document.getElementById('play-btn'), stopBtn = document.getElementById('stop-btn'),
-                downloadBtn = document.getElementById('download-btn'), zoomSlider = document.getElementById('zoom-slider'),
-                segmentsContainer = document.getElementById('segments'), statusIndicator = document.getElementById('status-indicator');
+            const fileInput = document.getElementById('file-input');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const prevTrackBtn = document.getElementById('prev-track-btn');
+            const nextTrackBtn = document.getElementById('next-track-btn');
+            const display = document.getElementById('display');
+            const trackInfo = document.getElementById('track-info');
+            const status = document.getElementById('status');
 
-            let wavesurfer, audioContext, originalAudioBuffer, isPlayingSequence = false, scheduledSources = [], regionCounter = 0, maxDuration = 0;
+            let audioContext;
+            let scriptNode;
+            let musicFile;
+            let isPlaying = false;
+            let currentTrack = 0;
+            const SAMPLE_RATE = 44100;
 
-            const initWavesurfer = () => {
-                if (wavesurfer) wavesurfer.destroy();
-                wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#4a90e2', progressColor: '#387cc7', cursorColor: '#fff', height: 150 });
-                audioContext = wavesurfer.backend.getAudioContext();
-                const wsRegions = wavesurfer.registerPlugin(WaveSurfer.Regions.create());
-                wavesurfer.registerPlugin(WaveSurfer.Spectrogram.create({ container: '#spectrogram', labels: true, height: 150 }));
+            // ファイル読み込み処理
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
 
-                wavesurfer.on('ready', (duration) => {
-                    originalAudioBuffer = wavesurfer.getDecodedData(); maxDuration = duration;
-                    statusIndicator.textContent = '準備完了。波形をドラッグして範囲選択してください。'; zoomSlider.disabled = false;
-                });
-                wavesurfer.on('loading', p => statusIndicator.textContent = `読み込み中: ${p}%`);
-                wavesurfer.on('error', e => statusIndicator.textContent = `エラー: ${e}`);
-                wsRegions.on('region-update-end', r => { addSegment(r); r.remove(); });
-            };
+                stop();
+                status.textContent = '読み込み中...';
 
-            fileInput.addEventListener('change', e => {
-                const file = e.target.files[0];
-                if (file) {
-                    initWavesurfer(); segmentsContainer.innerHTML = ''; regionCounter = 0;
-                    updateButtonsState(); statusIndicator.textContent = 'ファイルを読み込んでいます...';
-                    wavesurfer.load(URL.createObjectURL(file));
-                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const fileData = new Uint8Array(e.target.result);
+                    setupGME(fileData);
+                };
+                reader.onerror = () => {
+                    status.textContent = 'ファイル読み込みエラー';
+                };
+                reader.readAsArrayBuffer(file);
             });
-
-            zoomSlider.addEventListener('input', e => wavesurfer?.zoom(Number(e.target.value)));
-
-            const addSegment = (region) => {
-                regionCounter++;
-                const segmentId = `segment-${Date.now()}`;
-                const start = region.start, end = region.end;
-                const segmentEl = document.createElement('div');
-                segmentEl.className = 'segment'; segmentEl.id = segmentId;
-                segmentEl.dataset.start = start; segmentEl.dataset.end = end;
-                segmentEl.dataset.rate = 1; segmentEl.dataset.keepPitch = 'false';
-                segmentEl.draggable = true;
-                segmentEl.innerHTML = `
-                    <div class="segment-header"><span class="segment-label">Block ${regionCounter}</span><span class="delete-segment" title="削除">×</span></div>
-                    <div class="segment-control">
-                        <label>速度</label><input type="range" class="rate-slider" min="0.5" max="2" step="0.05" value="1">
-                        <input type="number" class="rate-input" min="0.5" max="2" step="0.05" value="1">
-                    </div>
-                    <div class="segment-control">
-                        <label>終了</label><input type="range" class="end-slider" min="${start.toFixed(3)}" max="${maxDuration.toFixed(3)}" step="0.01" value="${end.toFixed(3)}">
-                        <input type="number" class="end-input" min="${start.toFixed(3)}" max="${maxDuration.toFixed(3)}" step="0.01" value="${end.toFixed(3)}">
-                    </div>
-                    <div class="pitch-control">
-                        <label class="switch"><input type="checkbox" class="pitch-toggle"><span class="slider"></span></label>
-                        <span class="pitch-control-label">ピッチを維持<small>（ダウンロード時に有効）</small></span>
-                    </div>
-                `;
-                segmentsContainer.appendChild(segmentEl);
-                addDragDropHandlers(segmentEl); addSegmentControlListeners(segmentEl); updateButtonsState();
-            };
             
-            const addSegmentControlListeners = (el) => {
-                const rateSlider = el.querySelector('.rate-slider'), rateInput = el.querySelector('.rate-input'),
-                    endSlider = el.querySelector('.end-slider'), endInput = el.querySelector('.end-input'),
-                    pitchToggle = el.querySelector('.pitch-toggle');
-
-                rateSlider.addEventListener('input', () => { rateInput.value = rateSlider.value; el.dataset.rate = rateSlider.value; });
-                rateInput.addEventListener('change', () => { rateSlider.value = rateInput.value; el.dataset.rate = rateInput.value; });
-                endSlider.addEventListener('input', () => { if (parseFloat(endSlider.value) > parseFloat(el.dataset.start)) { endInput.value = endSlider.value; el.dataset.end = endSlider.value; } });
-                endInput.addEventListener('change', () => { if (parseFloat(endInput.value) > parseFloat(el.dataset.start)) { endSlider.value = endInput.value; el.dataset.end = endInput.value; } });
-                pitchToggle.addEventListener('change', () => { el.dataset.keepPitch = pitchToggle.checked; });
-            };
-
-            segmentsContainer.addEventListener('click', e => {
-                if (e.target.classList.contains('delete-segment')) { e.target.closest('.segment').remove(); updateButtonsState(); }
-            });
-
-            const playSequence = () => {
-                const segmentEls = [...segmentsContainer.querySelectorAll('.segment')]; if (segmentEls.length === 0) return;
-                stopSequence(); isPlayingSequence = true; updateButtonsState();
-                let currentTime = audioContext.currentTime;
-                segmentEls.forEach(el => {
-                    const start = parseFloat(el.dataset.start), end = parseFloat(el.dataset.end), rate = parseFloat(el.dataset.rate),
-                        duration = end - start, effectiveDuration = duration / rate, source = audioContext.createBufferSource();
-                    source.buffer = originalAudioBuffer; source.playbackRate.value = rate; source.start(currentTime, start, duration);
-                    scheduledSources.push(source); currentTime += effectiveDuration;
-                });
-                setTimeout(() => { if (isPlayingSequence) stopSequence(); }, (currentTime - audioContext.currentTime) * 1000);
-            };
-
-            const stopSequence = () => {
-                scheduledSources.forEach(s => s.stop()); scheduledSources = []; isPlayingSequence = false; updateButtonsState();
-            };
-
-            playBtn.addEventListener('click', playSequence);
-            stopBtn.addEventListener('click', stopSequence);
-            
-            const renderAndDownload = async () => {
-                updateButtonsState(true);
-                const segmentEls = [...segmentsContainer.querySelectorAll('.segment')];
-                if (segmentEls.length === 0) { statusIndicator.textContent = 'セグメントがありません。'; updateButtonsState(); return; }
-                
-                const numChannels = originalAudioBuffer.numberOfChannels;
-                const sampleRate = originalAudioBuffer.sampleRate;
-                let finalSamples = Array.from({ length: numChannels }, () => []);
-
-                for (let i = 0; i < segmentEls.length; i++) {
-                    const el = segmentEls[i];
-                    statusIndicator.textContent = `処理中: ブロック ${i + 1} / ${segmentEls.length}...`;
-                    await new Promise(resolve => setTimeout(resolve, 0)); // UI更新のための待機
-
-                    const start = parseFloat(el.dataset.start), end = parseFloat(el.dataset.end),
-                        rate = parseFloat(el.dataset.rate), keepPitch = el.dataset.keepPitch === 'true';
+            // GME (音楽エミュレータ) のセットアップ
+            function setupGME(fileData) {
+                try {
+                    // gme.jsのAPIを使用してNSFファイルをロード
+                    musicFile = new gme.MusicFile(SAMPLE_RATE);
+                    musicFile.load(fileData);
                     
-                    const startSample = Math.floor(start * sampleRate), endSample = Math.floor(end * sampleRate);
-                    const segmentChannels = [];
-                    for (let ch = 0; ch < numChannels; ch++) {
-                        segmentChannels.push(originalAudioBuffer.getChannelData(ch).slice(startSample, endSample));
-                    }
-
-                    if (keepPitch && rate !== 1.0) {
-                        const soundtouch = new soundtouch.SoundTouch(sampleRate);
-                        soundtouch.tempo = rate;
-                        const source = { extract: (target, numFrames, position) => {
-                            for (let ch = 0; ch < numChannels; ch++) {
-                                const buffer = segmentChannels[ch];
-                                for (let i = 0; i < numFrames; i++) {
-                                    target[i * numChannels + ch] = buffer[position + i] || 0;
-                                }
-                            }
-                            return Math.min(numFrames, segmentChannels[0].length - position);
-                        }};
-                        const filter = new soundtouch.SimpleFilter(source, soundtouch);
-                        const processedSamples = Array.from({ length: numChannels }, () => new Float32Array(Math.ceil(segmentChannels[0].length / rate * 1.1)));
-                        let framesExtracted, totalFrames = 0;
-                        const buffer = new Float32Array(4096 * numChannels);
-                        do {
-                            framesExtracted = filter.extract(buffer, 4096);
-                            if (framesExtracted > 0) {
-                                for (let ch = 0; ch < numChannels; ch++) {
-                                    for(let i = 0; i < framesExtracted; i++) processedSamples[ch][totalFrames + i] = buffer[i * numChannels + ch];
-                                }
-                                totalFrames += framesExtracted;
-                            }
-                        } while (framesExtracted > 0);
-                        for(let ch = 0; ch < numChannels; ch++) finalSamples[ch].push(processedSamples[ch].slice(0, totalFrames));
-                    } else { // ピッチ維持オフ（リサンプリング）
-                        for (let ch = 0; ch < numChannels; ch++) {
-                            const samples = segmentChannels[ch];
-                            const newLen = Math.round(samples.length / rate), resampled = new Float32Array(newLen);
-                            for (let i = 0; i < newLen; i++) {
-                                const C1 = i * rate, C2 = Math.floor(C1), T1 = C1 - C2;
-                                resampled[i] = (samples[C2] || 0) * (1 - T1) + (samples[C2 + 1] || 0) * T1;
-                            }
-                            finalSamples[ch].push(resampled);
-                        }
-                    }
+                    currentTrack = musicFile.track - 1; // gmeは1ベースなので0ベースに変換
+                    updateDisplay();
+                    enableControls();
+                    status.textContent = '準備完了';
+                } catch (err) {
+                    status.textContent = `エラー: ${err.message}`;
+                    console.error(err);
                 }
+            }
 
-                statusIndicator.textContent = '最終ファイルを生成中...';
-                const totalLength = finalSamples[0].reduce((sum, arr) => sum + arr.length, 0);
-                const finalBuffer = audioContext.createBuffer(numChannels, totalLength, sampleRate);
-                for(let ch = 0; ch < numChannels; ch++) {
-                    const channelData = finalBuffer.getChannelData(ch);
-                    let offset = 0;
-                    finalSamples[ch].forEach(arr => { channelData.set(arr, offset); offset += arr.length; });
+            // Web Audio APIのセットアップと再生開始
+            function play() {
+                if (!musicFile) return;
+                
+                // AudioContextはユーザー操作をきっかけに作成する必要がある
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
                 }
+                
+                // 非推奨だが互換性のためにScriptProcessorNodeを使用
+                // バッファサイズ、入力チャンネル数、出力チャンネル数（ステレオ）
+                scriptNode = audioContext.createScriptProcessor(4096, 0, 2);
 
-                const wavBlob = bufferToWave(finalBuffer);
-                const url = URL.createObjectURL(wavBlob);
-                const a = document.createElement('a'); a.href = url; a.download = `remix_${Date.now()}.wav`;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                statusIndicator.textContent = 'ダウンロードが完了しました。';
-                updateButtonsState();
-            };
-            downloadBtn.addEventListener('click', renderAndDownload);
+                // オーディオ処理コールバック
+                scriptNode.onaudioprocess = (audioProcessingEvent) => {
+                    const outputBuffer = audioProcessingEvent.outputBuffer;
+                    const leftChannel = outputBuffer.getChannelData(0);
+                    const rightChannel = outputBuffer.getChannelData(1);
+                    
+                    // gme.jsからオーディオサンプルを生成
+                    const samples = musicFile.generate(leftChannel.length * 2); // ステレオ分のサンプルを要求
+
+                    // 生成されたサンプルを左右のチャンネルに振り分ける
+                    for (let i = 0; i < leftChannel.length; i++) {
+                        leftChannel[i] = samples[i * 2];
+                        rightChannel[i] = samples[i * 2 + 1];
+                    }
+                    
+                    // 曲の終わりに達したかチェック
+                    if (musicFile.ended) {
+                        changeTrack(1, true); // 次の曲へ自動で移動
+                    }
+                };
+
+                scriptNode.connect(audioContext.destination);
+                isPlaying = true;
+                playPauseBtn.textContent = 'PAUSE';
+                status.textContent = `再生中: Track ${currentTrack + 1}`;
+            }
             
-            let draggedItem = null;
-            const addDragDropHandlers = (el) => {
-                el.addEventListener('dragstart', (e) => { draggedItem = e.target; setTimeout(() => e.target.classList.add('dragging'), 0); });
-                el.addEventListener('dragend', (e) => { e.target.classList.remove('dragging'); draggedItem = null; });
-            };
-            segmentsContainer.addEventListener('dragover', e => {
-                e.preventDefault();
-                const afterElement = [...e.currentTarget.querySelectorAll('.segment:not(.dragging)')].reduce((closest, child) => {
-                    const box = child.getBoundingClientRect(), offset = e.clientX - box.left - box.width / 2;
-                    return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
-                }, { offset: Number.NEGATIVE_INFINITY }).element;
-                if (afterElement == null) { draggedItem && e.currentTarget.appendChild(draggedItem); } 
-                else { draggedItem && e.currentTarget.insertBefore(draggedItem, afterElement); }
+            // 再生停止
+            function stop() {
+                if (scriptNode) {
+                    scriptNode.disconnect();
+                    scriptNode = null;
+                }
+                isPlaying = false;
+                playPauseBtn.textContent = 'PLAY';
+                if(musicFile) status.textContent = '停止中';
+            }
+            
+            // UIの表示を更新
+            function updateDisplay() {
+                if (!musicFile) return;
+                display.innerHTML = `
+                    <span class="display-line">GAME: ${musicFile.title || 'N/A'}</span>
+                    <span class="display-line">ARTIST: ${musicFile.author || 'N/A'}</span>
+                    <span class="display-line">COPYRIGHT: ${musicFile.copyright || 'N/A'}</span>
+                    <span class="display-line">--------------------</span>
+                    <span class="display-line">TRACK: ${currentTrack + 1} / ${musicFile.trackCount}</span>
+                `;
+                trackInfo.textContent = `${currentTrack + 1} / ${musicFile.trackCount}`;
+            }
+
+            // 曲を変更する
+            function changeTrack(delta, autoAdvance = false) {
+                if (!musicFile) return;
+                
+                let newTrack = currentTrack + delta;
+                
+                if (newTrack < 0) newTrack = musicFile.trackCount - 1;
+                if (newTrack >= musicFile.trackCount) newTrack = 0;
+                
+                currentTrack = newTrack;
+                musicFile.startTrack(currentTrack);
+                updateDisplay();
+
+                if (!isPlaying && !autoAdvance) {
+                    status.textContent = `選択中: Track ${currentTrack + 1}`;
+                } else if (isPlaying) {
+                     status.textContent = `再生中: Track ${currentTrack + 1}`;
+                }
+            }
+            
+            // UIコントロールの有効/無効化
+            function enableControls() {
+                const enabled = !!musicFile;
+                playPauseBtn.disabled = !enabled;
+                stopBtn.disabled = !enabled;
+                prevTrackBtn.disabled = !enabled;
+                nextTrackBtn.disabled = !enabled;
+            }
+
+            // イベントリスナー
+            playPauseBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    stop();
+                } else {
+                    play();
+                }
             });
             
-            const updateButtonsState = (isProcessing = false) => {
-                const hasSegments = segmentsContainer.children.length > 0;
-                playBtn.disabled = isProcessing || !hasSegments || isPlayingSequence;
-                stopBtn.disabled = isProcessing || !isPlayingSequence;
-                downloadBtn.disabled = isProcessing || !hasSegments || isPlayingSequence;
-            };
-
-            function bufferToWave(abuffer) {
-                const nCh = abuffer.numberOfChannels, len = abuffer.length, sampleRate = abuffer.sampleRate,
-                    buffer = new ArrayBuffer(44 + len * nCh * 2), view = new DataView(buffer);
-                const write = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-                write(0, 'RIFF'); view.setUint32(4, 36 + len * nCh * 2, true); write(8, 'WAVE'); write(12, 'fmt ');
-                view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, nCh, true);
-                view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2 * nCh, true);
-                view.setUint16(32, nCh * 2, true); view.setUint16(34, 16, true); write(36, 'data');
-                view.setUint32(40, len * nCh * 2, true);
-                let offset = 44;
-                for (let i = 0; i < len; i++) {
-                    for (let ch = 0; ch < nCh; ch++) {
-                        const s = Math.max(-1, Math.min(1, abuffer.getChannelData(ch)[i]));
-                        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true); offset += 2;
-                    }
+            stopBtn.addEventListener('click', () => {
+                if (isPlaying) stop();
+                // 停止時は曲を最初に戻す
+                if (musicFile) {
+                    musicFile.startTrack(currentTrack);
+                    status.textContent = '停止中';
                 }
-                return new Blob([view], { type: 'audio/wav' });
-            }
+            });
+            
+            prevTrackBtn.addEventListener('click', () => changeTrack(-1));
+            nextTrackBtn.addEventListener('click', () => changeTrack(1));
         });
     </script>
 </body>
