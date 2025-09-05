@@ -17,30 +17,32 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Clone and Build nes2nsf tool
+    - name: Clone and Build nes2nsf tool (using make)
       run: |
-        # nsfplayの公式リポジトリをクローンします
+        # nsfplayの公式リポジトリをクローン
         git clone https://github.com/bbbradsmith/nsfplay.git
-        # nes2nsfツールをビルドします
-        g++ -o nes2nsf nsfplay/misc/nes2nsf.cpp
+        # contribディレクトリに移動してmakeでビルド (readme記載の公式な方法)
+        cd nsfplay/contrib
+        make nes2nsf
 
     - name: Convert .nes to .nsf
       run: |
-        # 'roms'ディレクトリ内のすべての.nesファイルを探して変換します
+        # 'roms'ディレクトリ内のすべての.nesファイルを探して変換
+        # ビルドされたツールのパスを正しく指定
         find roms -name "*.nes" | while read nesfile; do
           nsffile="${nesfile%.nes}.nsf"
-          ./nes2nsf "$nesfile" "$nsffile"
+          ./nsfplay/contrib/nes2nsf "$nesfile" "$nsffile"
           echo "Converted $nesfile to $nsffile"
         done
 
     - name: Commit and Push .nsf files
       run: |
-        # Gitのユーザー情報を設定します
+        # Gitのユーザー情報を設定
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        # 生成された.nsfファイルを追加します
+        # 生成された.nsfファイルを追加
         git add roms/*.nsf
-        # 変更がある場合のみコミットとプッシュを実行します
+        # 変更がある場合のみコミットとプッシュを実行
         if ! git diff --cached --quiet; then
           git commit -m "Automated conversion of .nes to .nsf"
           git push
