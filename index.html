@@ -90,7 +90,9 @@
     <script>
         window.onload = function() {
             const canvas = document.getElementById('nes-screen');
-            const context = canvas.getContext('2d');
+            // ↓↓↓ 変更点 ↓↓↓
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+            // ↑↑↑ 変更点 ↑↑↑
             const romInput = document.getElementById('rom-input');
             
             let nes;
@@ -151,7 +153,6 @@
                 if (!nes) return;
 
                 const player = 1; // 1Pコントローラー
-                const state = isDown ? 1 : 0;
                 
                 switch (event.keyCode) {
                     case 38: // ↑
