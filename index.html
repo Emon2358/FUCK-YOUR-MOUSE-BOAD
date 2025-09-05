@@ -3,295 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ファミコン NSF ウェブプレーヤー</title>
+    <title>Web NES Emulator</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        :root {
-            --bg-color: #2A3442;
-            --panel-bg: #1E2632;
-            --display-bg: #92A398;
-            --text-color: #333;
-            --accent-color: #DE4B4B;
-            --border-color: #111;
-        }
         body {
-            font-family: 'Press Start 2P', cursive;
-            background-color: var(--bg-color);
-            color: white;
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .player-container {
-            background-color: var(--panel-bg);
-            border: 4px solid var(--border-color);
-            border-radius: 8px;
-            padding: 25px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 8px 0 var(--border-color);
-        }
-        .display {
-            background-color: var(--display-bg);
-            color: var(--text-color);
-            padding: 15px;
-            border-radius: 4px;
-            border: 2px solid #5A6960;
-            margin-bottom: 20px;
-            font-size: 12px;
-            line-height: 1.6;
-            min-height: 120px;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .display-line {
-            display: block;
-        }
-        .controls, .track-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        button, .file-label {
-            font-family: inherit;
-            font-size: 14px;
-            padding: 12px 18px;
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            background-color: #4A586A;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 4px 0 var(--border-color);
-            position: relative;
-            top: 0;
-            transition: top 0.1s, box-shadow 0.1s;
-        }
-        button:active, .file-label:active {
-            top: 4px;
-            box-shadow: none;
-        }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            top: 0;
-            box-shadow: 0 4px 0 var(--border-color);
-        }
-        #play-pause-btn {
-            background-color: var(--accent-color);
-        }
-        #file-input {
-            display: none;
-        }
-        #status {
             text-align: center;
-            font-size: 10px;
-            margin-top: 15px;
-            min-height: 1em;
+        }
+        h1 {
+            color: #d32f2f;
+        }
+        #nes-container {
+            width: 512px;
+            height: 480px;
+            border: 2px solid #333;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            background-color: #000;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            /* ドット絵をくっきり表示 */
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        #controls {
+            margin: 20px 0;
+        }
+        .instructions {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 500px;
+        }
+        .instructions h2 {
+            margin-top: 0;
+            color: #d32f2f;
+        }
+        kbd {
+            display: inline-block;
+            padding: 3px 5px;
+            font-family: monospace;
+            line-height: 10px;
+            vertical-align: middle;
+            background-color: #fafafa;
+            border: solid 1px #ccc;
+            border-bottom-color: #bbb;
+            border-radius: 3px;
+            box-shadow: inset 0 -1px 0 #bbb;
         }
     </style>
 </head>
 <body>
+    <h1>Web NES Emulator 🎮</h1>
+    <p>プレイしたいNESのROMファイル(.nes)を選択してください。</p>
 
-    <div class="player-container">
-        <div id="display" class="display">
-            <span class="display-line">GAME: (NO FILE)</span>
-            <span class="display-line">ARTIST:</span>
-            <span class="display-line">COPYRIGHT:</span>
-            <span class="display-line">--------------------</span>
-            <span class="display-line">TRACK: - / -</span>
-        </div>
-
-        <div class="track-controls">
-            <button id="prev-track-btn" disabled>&lt;&lt;</button>
-            <span id="track-info">- / -</span>
-            <button id="next-track-btn" disabled>&gt;&gt;</button>
-        </div>
-        
-        <div class="controls">
-            <button id="play-pause-btn" disabled>PLAY</button>
-            <button id="stop-btn" disabled>STOP</button>
-            <label for="file-input" class="file-label">LOAD</label>
-            <input type="file" id="file-input" accept=".nsf,.nsfe">
-        </div>
-        
-        <div id="status">NSFファイルを選択してください</div>
+    <div id="controls">
+        <input type="file" id="rom-input" accept=".nes">
     </div>
 
-    <script src="https://cdn.jsdelivr.net/gh/goto-bus-stop/gme-js/gme.js"></script>
+    <div id="nes-container">
+        <canvas id="nes-screen" width="256" height="240"></canvas>
+    </div>
+
+    <div class="instructions">
+        <h2>操作方法</h2>
+        <p>十字キー: <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></p>
+        <p>Aボタン: <kbd>X</kbd> or <kbd>L</kbd></p>
+        <p>Bボタン: <kbd>Z</kbd> or <kbd>K</kbd></p>
+        <p>SELECT: <kbd>Shift</kbd></p>
+        <p>START: <kbd>Enter</kbd></p>
+    </div>
+
+    <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
+    
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const fileInput = document.getElementById('file-input');
-            const playPauseBtn = document.getElementById('play-pause-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const prevTrackBtn = document.getElementById('prev-track-btn');
-            const nextTrackBtn = document.getElementById('next-track-btn');
-            const display = document.getElementById('display');
-            const trackInfo = document.getElementById('track-info');
-            const status = document.getElementById('status');
+        window.onload = function() {
+            const canvas = document.getElementById('nes-screen');
+            const context = canvas.getContext('2d');
+            const romInput = document.getElementById('rom-input');
+            
+            let nes;
+            let frameTimer;
 
-            let audioContext;
-            let scriptNode;
-            let musicFile;
-            let isPlaying = false;
-            let currentTrack = 0;
-            const SAMPLE_RATE = 44100;
+            // 画面の初期化
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, 256, 240);
+            
+            // NESエミュレータのインスタンスを作成
+            nes = new jsnes.NES({
+                onFrame: function(frameBuffer) {
+                    // 画面の描画
+                    const imageData = context.getImageData(0, 0, 256, 240);
+                    const data = imageData.data;
+                    for (let i = 0; i < frameBuffer.length; i++) {
+                        data[i] = frameBuffer[i];
+                    }
+                    context.putImageData(imageData, 0, 0);
+                },
+                // 音声は今回は簡略化
+                onAudioSample: function(left, right) {},
+            });
 
-            // ファイル読み込み処理
-            fileInput.addEventListener('change', (event) => {
+            // メインループ
+            function mainLoop() {
+                nes.frame();
+                frameTimer = requestAnimationFrame(mainLoop);
+            }
+            
+            // ROMが選択されたときの処理
+            romInput.addEventListener('change', (event) => {
+                if (frameTimer) {
+                    cancelAnimationFrame(frameTimer);
+                }
+                
                 const file = event.target.files[0];
-                if (!file) return;
-
-                stop();
-                status.textContent = '読み込み中...';
+                if (!file) {
+                    return;
+                }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const fileData = new Uint8Array(e.target.result);
-                    setupGME(fileData);
-                };
-                reader.onerror = () => {
-                    status.textContent = 'ファイル読み込みエラー';
-                };
-                reader.readAsArrayBuffer(file);
-            });
-            
-            // GME (音楽エミュレータ) のセットアップ
-            function setupGME(fileData) {
-                try {
-                    // gme.jsのAPIを使用してNSFファイルをロード
-                    musicFile = new gme.MusicFile(SAMPLE_RATE);
-                    musicFile.load(fileData);
-                    
-                    currentTrack = musicFile.track - 1; // gmeは1ベースなので0ベースに変換
-                    updateDisplay();
-                    enableControls();
-                    status.textContent = '準備完了';
-                } catch (err) {
-                    status.textContent = `エラー: ${err.message}`;
-                    console.error(err);
-                }
-            }
-
-            // Web Audio APIのセットアップと再生開始
-            function play() {
-                if (!musicFile) return;
-                
-                // AudioContextはユーザー操作をきっかけに作成する必要がある
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
-                }
-                
-                // 非推奨だが互換性のためにScriptProcessorNodeを使用
-                // バッファサイズ、入力チャンネル数、出力チャンネル数（ステレオ）
-                scriptNode = audioContext.createScriptProcessor(4096, 0, 2);
-
-                // オーディオ処理コールバック
-                scriptNode.onaudioprocess = (audioProcessingEvent) => {
-                    const outputBuffer = audioProcessingEvent.outputBuffer;
-                    const leftChannel = outputBuffer.getChannelData(0);
-                    const rightChannel = outputBuffer.getChannelData(1);
-                    
-                    // gme.jsからオーディオサンプルを生成
-                    const samples = musicFile.generate(leftChannel.length * 2); // ステレオ分のサンプルを要求
-
-                    // 生成されたサンプルを左右のチャンネルに振り分ける
-                    for (let i = 0; i < leftChannel.length; i++) {
-                        leftChannel[i] = samples[i * 2];
-                        rightChannel[i] = samples[i * 2 + 1];
-                    }
-                    
-                    // 曲の終わりに達したかチェック
-                    if (musicFile.ended) {
-                        changeTrack(1, true); // 次の曲へ自動で移動
+                    const romData = e.target.result;
+                    try {
+                        nes.loadROM(romData);
+                        mainLoop();
+                    } catch (error) {
+                        alert("ROMファイルの読み込みに失敗しました。有効な.nesファイルを選択してください。");
+                        console.error(error);
                     }
                 };
-
-                scriptNode.connect(audioContext.destination);
-                isPlaying = true;
-                playPauseBtn.textContent = 'PAUSE';
-                status.textContent = `再生中: Track ${currentTrack + 1}`;
-            }
-            
-            // 再生停止
-            function stop() {
-                if (scriptNode) {
-                    scriptNode.disconnect();
-                    scriptNode = null;
-                }
-                isPlaying = false;
-                playPauseBtn.textContent = 'PLAY';
-                if(musicFile) status.textContent = '停止中';
-            }
-            
-            // UIの表示を更新
-            function updateDisplay() {
-                if (!musicFile) return;
-                display.innerHTML = `
-                    <span class="display-line">GAME: ${musicFile.title || 'N/A'}</span>
-                    <span class="display-line">ARTIST: ${musicFile.author || 'N/A'}</span>
-                    <span class="display-line">COPYRIGHT: ${musicFile.copyright || 'N/A'}</span>
-                    <span class="display-line">--------------------</span>
-                    <span class="display-line">TRACK: ${currentTrack + 1} / ${musicFile.trackCount}</span>
-                `;
-                trackInfo.textContent = `${currentTrack + 1} / ${musicFile.trackCount}`;
-            }
-
-            // 曲を変更する
-            function changeTrack(delta, autoAdvance = false) {
-                if (!musicFile) return;
-                
-                let newTrack = currentTrack + delta;
-                
-                if (newTrack < 0) newTrack = musicFile.trackCount - 1;
-                if (newTrack >= musicFile.trackCount) newTrack = 0;
-                
-                currentTrack = newTrack;
-                musicFile.startTrack(currentTrack);
-                updateDisplay();
-
-                if (!isPlaying && !autoAdvance) {
-                    status.textContent = `選択中: Track ${currentTrack + 1}`;
-                } else if (isPlaying) {
-                     status.textContent = `再生中: Track ${currentTrack + 1}`;
-                }
-            }
-            
-            // UIコントロールの有効/無効化
-            function enableControls() {
-                const enabled = !!musicFile;
-                playPauseBtn.disabled = !enabled;
-                stopBtn.disabled = !enabled;
-                prevTrackBtn.disabled = !enabled;
-                nextTrackBtn.disabled = !enabled;
-            }
-
-            // イベントリスナー
-            playPauseBtn.addEventListener('click', () => {
-                if (isPlaying) {
-                    stop();
-                } else {
-                    play();
-                }
+                reader.readAsBinaryString(file);
             });
-            
-            stopBtn.addEventListener('click', () => {
-                if (isPlaying) stop();
-                // 停止時は曲を最初に戻す
-                if (musicFile) {
-                    musicFile.startTrack(currentTrack);
-                    status.textContent = '停止中';
+
+            // キーボード操作の処理
+            function handleKey(event, isDown) {
+                if (!nes) return;
+
+                const player = 1; // 1Pコントローラー
+                const state = isDown ? 1 : 0;
+                
+                switch (event.keyCode) {
+                    case 38: // ↑
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_UP, isDown);
+                        break;
+                    case 40: // ↓
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_DOWN, isDown);
+                        break;
+                    case 37: // ←
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_LEFT, isDown);
+                        break;
+                    case 39: // →
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_RIGHT, isDown);
+                        break;
+                    case 88: // X
+                    case 76: // L  (Aボタン)
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_A, isDown);
+                        break;
+                    case 90: // Z
+                    case 75: // K  (Bボタン)
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_B, isDown);
+                        break;
+                    case 16: // Shift (SELECTボタン)
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_SELECT, isDown);
+                        break;
+                    case 13: // Enter (STARTボタン)
+                        nes.buttonChanged(player, jsnes.Controller.BUTTON_START, isDown);
+                        break;
+                    default:
+                        return; // 他のキーは無視
                 }
-            });
-            
-            prevTrackBtn.addEventListener('click', () => changeTrack(-1));
-            nextTrackBtn.addEventListener('click', () => changeTrack(1));
-        });
+                event.preventDefault();
+            }
+
+            document.addEventListener('keydown', (e) => handleKey(e, true));
+            document.addEventListener('keyup', (e) => handleKey(e, false));
+        };
     </script>
 </body>
 </html>
