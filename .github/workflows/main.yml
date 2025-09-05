@@ -1,9 +1,13 @@
 name: NES to NSF Converter
 
 on:
+  # 'roms'ディレクトリ内の.nesファイルがpushされたときに実行
   push:
     paths:
-      - 'roms/**.nes' # 'roms'ディレクトリ内の.nesファイルがpushされたときに実行
+      - 'roms/**.nes' 
+
+  # 手動で実行できるようにする
+  workflow_dispatch:
 
 jobs:
   convert:
@@ -13,11 +17,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Download and Extract nes2nsf
+    - name: Clone and Build nes2nsf tool
       run: |
-        # NSFPlayの最新版をダウンロードして展開します
-        wget http://nsfplay.com/download/nsfplay24-src.zip -O nsfplay.zip
-        unzip nsfplay.zip
+        # nsfplayの公式リポジトリをクローンします
+        git clone https://github.com/bbbradsmith/nsfplay.git
         # nes2nsfツールをビルドします
         g++ -o nes2nsf nsfplay/misc/nes2nsf.cpp
 
@@ -35,7 +38,7 @@ jobs:
         # Gitのユーザー情報を設定します
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        # 生成された.nsfファイルを追加してコミットします
+        # 生成された.nsfファイルを追加します
         git add roms/*.nsf
         # 変更がある場合のみコミットとプッシュを実行します
         if ! git diff --cached --quiet; then
