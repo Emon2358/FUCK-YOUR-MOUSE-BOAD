@@ -30,7 +30,6 @@
         canvas {
             width: 100%;
             height: 100%;
-            /* ドット絵をくっきり表示 */
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
@@ -90,22 +89,18 @@
     <script>
         window.onload = function() {
             const canvas = document.getElementById('nes-screen');
-            // ↓↓↓ 変更点 ↓↓↓
+            // [修正点1] willReadFrequentlyを追加して警告を解消
             const context = canvas.getContext('2d', { willReadFrequently: true });
-            // ↑↑↑ 変更点 ↑↑↑
             const romInput = document.getElementById('rom-input');
             
             let nes;
             let frameTimer;
 
-            // 画面の初期化
             context.fillStyle = 'black';
             context.fillRect(0, 0, 256, 240);
             
-            // NESエミュレータのインスタンスを作成
             nes = new jsnes.NES({
                 onFrame: function(frameBuffer) {
-                    // 画面の描画
                     const imageData = context.getImageData(0, 0, 256, 240);
                     const data = imageData.data;
                     for (let i = 0; i < frameBuffer.length; i++) {
@@ -113,26 +108,21 @@
                     }
                     context.putImageData(imageData, 0, 0);
                 },
-                // 音声は今回は簡略化
                 onAudioSample: function(left, right) {},
             });
 
-            // メインループ
             function mainLoop() {
                 nes.frame();
                 frameTimer = requestAnimationFrame(mainLoop);
             }
             
-            // ROMが選択されたときの処理
             romInput.addEventListener('change', (event) => {
                 if (frameTimer) {
                     cancelAnimationFrame(frameTimer);
                 }
                 
                 const file = event.target.files[0];
-                if (!file) {
-                    return;
-                }
+                if (!file) return;
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -148,41 +138,42 @@
                 reader.readAsBinaryString(file);
             });
 
-            // キーボード操作の処理
+            // [修正点2] キーボード操作の処理を正しい関数に修正
             function handleKey(event, isDown) {
                 if (!nes) return;
 
-                const player = 1; // 1Pコントローラー
+                const player = 1;
+                const buttonAction = isDown ? nes.buttonDown : nes.buttonUp;
                 
                 switch (event.keyCode) {
                     case 38: // ↑
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_UP, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_UP);
                         break;
                     case 40: // ↓
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_DOWN, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_DOWN);
                         break;
                     case 37: // ←
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_LEFT, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_LEFT);
                         break;
                     case 39: // →
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_RIGHT, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_RIGHT);
                         break;
                     case 88: // X
                     case 76: // L  (Aボタン)
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_A, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_A);
                         break;
                     case 90: // Z
                     case 75: // K  (Bボタン)
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_B, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_B);
                         break;
                     case 16: // Shift (SELECTボタン)
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_SELECT, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_SELECT);
                         break;
                     case 13: // Enter (STARTボタン)
-                        nes.buttonChanged(player, jsnes.Controller.BUTTON_START, isDown);
+                        buttonAction(player, jsnes.Controller.BUTTON_START);
                         break;
                     default:
-                        return; // 他のキーは無視
+                        return;
                 }
                 event.preventDefault();
             }
